@@ -13,3 +13,18 @@ insert into faculty values(3, 'miss aisha');
 
 alter table students add (f_id int, foreign key(f_id), REFERENCES faculty(id));
 update students set f_id = 1 where id in(2);
+
+select s.* from students cross join faculty;
+
+select s.* , f.name as faculty_name from students s
+cross join
+faculty f;
+
+select s.* , f.* from students s
+full outer join
+faculty f
+on
+s,f_id = f.id
+;
+
+
