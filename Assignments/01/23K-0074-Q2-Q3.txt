@@ -121,12 +121,13 @@ left join Books b on i.BookID = b.BookID
 order by m.MemberID;
 
 --4)constraint violation demonstration
---duplicate memberID
+--duplicate member(intentional error)
 insert into Members (MemberID, Name, Email) values (1, 'Imran Khan', 'imran.khan@gmail.com');
---negative copies
-update Books set CopiesAvailable = -7 where BookID = 3;
---non existing member
+--set negative copies for an existing book(intentional error)
+update Books set CopiesAvailable = -7 where BookID = 12003;
+--insert issuedbook with non-existent member(intentional FK error)
 insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate) values (105, 999, 12001, sysdate);
+
 
 --5)suggested improvements
 ---1) count how many times a book was issued by adding in a new timesissued column
