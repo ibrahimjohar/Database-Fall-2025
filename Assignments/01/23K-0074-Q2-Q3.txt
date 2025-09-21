@@ -1,0 +1,173 @@
+–Ibrahim Johar Farooqi
+–23K-0074
+–BAI-5A
+–DB Assignment 1 - Q2 & Q3
+
+–Q2)
+--create members table
+create table Members (
+    MemberID number primary key,
+    Name varchar(100) not null,
+    Email varchar(150) unique not null,
+    JoinDate date default sysdate
+);
+
+--create books table
+create table Books (
+    BookID number primary key,
+    Title varchar(255) not null,
+    Author varchar(100) not null,
+    CopiesAvailable number not null constraint check_copies check (CopiesAvailable >= 0)
+);
+
+--create issuedbooks
+create table IssuedBooks (
+  IssuedID number primary key,
+  MemberID number not null,
+  BookID number not null,
+  IssueDate date default sysdate,
+  ReturnDate date,
+  constraint fk_member foreign key (MemberID) references Members(MemberID),
+  constraint fk_book foreign key (BookID) references Books(BookID)
+);
+
+--simple catalog design
+--for all relations - catalog
+create table catalog_relations (
+    relation_name varchar(100) primary key,
+    n_attributes number,
+    primary_key varchar(200)
+);
+
+--catalog of attributes
+create table catalog_attributes (
+    relation_name varchar(50),
+    attr_name varchar(50),
+    data_type varchar(50),
+    --can be 'y' or 'n'
+    is_nullable char(1),
+    --'P'=primary,'F'=foreign,'U'=unique,'N'=none
+    is_key char(1),        
+    constraint fk_rel foreign key (relation_name) references catalog_relations(relation_name)
+);
+
+--catalog of the foreign keys
+create table catalog_foreignkeys (
+    relation_name varchar(100),
+    attr_name varchar(100),
+    ref_table varchar(100),
+    ref_attr varchar(100)
+);
+
+--catalog of the contraints
+create table catalog_constraints (
+    relation_name varchar(100),
+    constraint_name varchar(100),
+    constraint_type varchar(40),
+    definition varchar(5000)
+);
+
+--populating catalog metadata (documenting the relations)
+insert into catalog_relations (relation_name, n_attributes, primary_key)
+values ('Members', 4, 'MemberID');
+
+insert into catalog_relations (relation_name, n_attributes, primary_key)
+values ('Books', 4, 'BookID');
+
+insert into catalog_relations (relation_name, n_attributes, primary_key)
+values ('issuedbooks', 5, 'IssuedID');
+
+--populating catalog_attributes
+insert into catalog_attributes (relation_name, attr_name, data_type, is_nullable, is_key)
+values ('Members','MemberID','NUMBER','N','P');
+
+insert into catalog_attributes (relation_name, attr_name, data_type, is_nullable, is_key)
+values ('Members','Email','VARCHAR(150)','N','U');
+
+insert into catalog_attributes (relation_name, attr_name, data_type, is_nullable, is_key)
+values ('Books','CopiesAvailable','NUMBER','N','N');
+
+--3a) insert the sample members & books
+insert all
+  into Books (BookID, Title, Author, CopiesAvailable) values (12001, '12 Rules for Life', 'Jordan Peterson', 12)
+  into Books (BookID, Title, Author, CopiesAvailable) values (12002, 'The Great Gatsby', 'F.Scott Fitzgerald', 7)
+  into Books (BookID, Title, Author, CopiesAvailable) values (12003, 'Atomic Habits', 'James Clear', 5)
+select * from dual;
+
+select * from books;
+
+insert all
+  into Members (MemberID, Name, Email) values (1, 'Ibrahim Johar', 'ibrahimjohar@gmail.com')
+  into Members (MemberID, Name, Email) values (2, 'Hassan Ali', 'hassan.ali@hotmail.com')
+  into Members (MemberID, Name, Email) values (3, 'Zainab Khan', 'zainab.khan@gmail.com')
+select * from dual;
+
+select * from members;
+
+--3b)record an issuance
+insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate, ReturnDate)
+values (1, 1, 12001, to_date('12-sep-2025', 'dd-mon-yyyy'), to_date('20-sep-2025','dd-mon-yyyy')); 
+
+select * from IssuedBooks;
+update Books set CopiesAvailable = CopiesAvailable - 1 where BookID = 12001;
+
+select * from Books;
+
+--3c)display members w/ their issued books
+select m.MemberID, m.Name, b.BookID, b.Title, i.IssueDate, i.ReturnDate
+from Members m
+left join issuedbooks i on m.MemberID = i.MemberID
+left join Books b on i.BookID = b.BookID
+order by m.MemberID;
+
+--4)constraint violation demonstration
+--duplicate memberID
+insert into Members (MemberID, Name, Email) values (1, 'Imran Khan', 'imran.khan@gmail.com');
+--negative copies
+update Books set CopiesAvailable = -7 where BookID = 3;
+--non existing member
+insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate) values (105, 999, 1, sysdate);
+
+--5)suggested improvements
+---1) count how many times a book was issued by adding in a new timesissued column
+---2) add duedate column in issuedbooks so we may know when to return
+---3) add phone number for members - to contact them in case they dont return the books on time
+---4) track book condition, by assigning labels like new, good, damaged in a new "condition" column
+---5) add a member status column, to track whether a member has been active in the past month or so
+
+--6)
+--a)Members with no issued books
+select MemberID, Name from Members m where not exists (select 1 from issuedbooks i where i.MemberID = m.MemberID);
+
+--b)Books having the highest CopiesAvailable
+select BookID, Title, CopiesAvailable from Books where CopiesAvailable = (select max(CopiesAvailable) from Books);
+
+insert all
+  into issuedbooks (IssuedID, MemberID, BookID, IssueDate, ReturnDate) values (2, 1, 2, to_date('10-sep-2025','dd-mon-yyyy'), to_date('20-sep-2025','dd-mon-yyyy'))
+  into issuedbooks (IssuedID, MemberID, BookID, IssueDate, ReturnDate) values (3, 2, 1, to_date('12-sep-2025','dd-mon-yyyy'), to_date('22-sep-2025','dd-mon-yyyy'))
+  into issuedbooks (IssuedID, MemberID, BookID, IssueDate, ReturnDate) values (4, 3, 2, to_date('13-sep-2025','dd-mon-yyyy'), to_date('24-sep-2025','dd-mon-yyyy'))
+select * from dual;
+
+
+--c)Most active member(top by num of issues)
+select MemberID, Name, total_issues
+from (
+  select m.MemberID, m.Name, count(i.IssuedID) as total_issues
+  from Members m
+  left join issuedbooks i on m.MemberID = i.MemberID
+  group by m.MemberID, m.Name
+  order by count(i.IssuedID) desc
+)
+where rownum = 1;
+
+
+--d)Books not issued even once,
+select BookID, Title from Books b where not exists (select 1 from issuedbooks i where i.BookID = b.BookID);
+
+--e)members with overdue books
+--adding overdue sample rows first
+insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate, ReturnDate)
+values (6, 1, 3, to_date('17-jul-2025','dd-mon-yyyy'), null);
+insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate, ReturnDate)
+values (7, 3, 1, to_date('29-jul-2025','dd-mon-yyyy'), null);
+
