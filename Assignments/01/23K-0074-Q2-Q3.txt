@@ -181,3 +181,195 @@ where i.returndate is null and i.issuedate < sysdate - 30
 order by m.memberid;
 
 
+--Q3)
+--1) creating tables
+
+create table patient (
+    patient_id number primary key,
+    name varchar(100) not null,
+    gender char(1) check (gender in ('M','F')),
+    dob date,
+    email varchar(150) unique,
+    phone varchar(20),
+    address varchar(200),
+    username varchar(50),
+    password varchar(50),
+    join_date date default sysdate
+);
+
+create table doctor (
+    doctor_id number primary key,
+    doctor name varchar(100) not null,
+    specialization varchar(100),
+    username varchar(50),
+    password varchar(50)
+);
+
+create table appointment (
+    appointment_id number primary key,
+    appointment_date date not null,
+    appointment_time varchar(10),
+    status varchar(20),
+    clinic_number varchar(10),
+    patient_id number,
+    doctor_id number(5),
+    constraint fk_ap_patient foreign key (patient_id) references patient(patient_id),
+    constraint fk_ap_doctor foreign key (doctor_id) references doctor(doctor_id)
+);
+
+create table prescription (
+    prescription_id number primary key,
+    prescription_date date,
+    doctor_advice varchar(500),
+    followup_required char(1) check (followup_required in ('Y','N')),
+    patient_id number,
+    doctor_id number,
+    constraint fk_pr_patient foreign key (patient_id) references patient(patient_id),
+    constraint fk_pr_doctor foreign key (doctor_id) references doctor(doctor_id)
+);
+
+create table invoice (
+    invoice_id number primary key,
+    invoice_date date,
+    amount number(10,2) check (amount >= 0),
+    payment_status varchar(20),
+    payment_method varchar(30),
+    patient_id number(5),
+    constraint fk_in_patient foreign key (patient_id) references patient(patient_id)
+);
+
+--tests table: includes patient and doctor ids so we can join to them easily
+create table tests (
+    test_id number primary key,
+    patient_id number,
+    doctor_id number,
+    blood_test char(1) check (blood_test in ('Y','N')),
+    x_ray char(1) check (x_ray in ('Y','N')),
+    mri char(1) check (mri in ('Y','N')),
+    ct_scan char(1) check (ct_scan in ('Y','N')),
+    constraint fk_test_patient foreign key (patient_id) references patient(patient_id),
+    constraint fk_test_doctor foreign key (doctor_id) references doctor(doctor_id)
+);
+
+--2)insert sample rows (small set, different names/dates than your friend)
+
+insert into patient (patient_id, name, gender, dob, email, phone, address, username, password)
+values (11, 'hamza iqbal', 'M', to_date('1988-04-10','yyyy-mm-dd'), 'hamza.iqbal@gmail.com', '03010001111', 'street 5, lahore', 'hamza', 'p1');
+
+insert into patient (patient_id, name, gender, dob, email, phone, address, username, password)
+values (12, 'ayesha noor', 'F', to_date('1993-07-25','yyyy-mm-dd'), 'ayesha.noor@gmail.com', '03012223333', 'block b, karachi', 'ayesha', 'p2');
+
+insert into patient (patient_id, name, gender, dob, email, phone, address, username, password)
+values (13, 'ali khan', 'M', to_date('1990-12-02','yyyy-mm-dd'), 'ali.khan@gmail.com', '03014445555', 'gulberg', 'alik', 'p3');
+
+insert into doctor (doctor_id, doctor_name, specialization, username, password)
+values (21, 'dr salman', 'general medicine', 'drsalman', 'd1');
+
+insert into doctor (doctor_id, doctor_name, specialization, username, password)
+values (22, 'dr saba', 'orthopedics', 'drsaba', 'd2');
+
+--appointments
+insert into appointment (appointment_id, appointment_date, appointment_time, status, clinic_number, patient_id, doctor_id)
+values (101, to_date('2025-09-01','yyyy-mm-dd'), '10:30', 'booked', 'cl-1', 11, 21);
+
+insert into appointment (appointment_id, appointment_date, appointment_time, status, clinic_number, patient_id, doctor_id)
+values (102, to_date('2025-09-02','yyyy-mm-dd'), '11:00', 'cancelled', 'cl-2', 12, 22);
+
+insert into appointment (appointment_id, appointment_date, appointment_time, status, clinic_number, patient_id, doctor_id)
+values (103, to_date('2025-09-02','yyyy-mm-dd'), '14:00', 'booked', 'cl-1', 13, 21);
+
+--prescriptions
+insert into prescription (prescription_id, prescription_date, doctor_advice, followup_required, patient_id, doctor_id)
+values (301, to_date('2025-09-02','yyyy-mm-dd'), 'amoxicillin 500mg twice daily', 'Y', 11, 21);
+
+insert into prescription (prescription_id, prescription_date, doctor_advice, followup_required, patient_id, doctor_id)
+values (302, to_date('2025-09-03','yyyy-mm-dd'), 'apply ointment', 'N', 12, 22);
+
+--invoices
+insert into invoice (invoice_id, invoice_date, amount, payment_status, payment_method, patient_id)
+values (401, to_date('2025-09-01','yyyy-mm-dd'), 2500, 'unpaid', 'cash', 11);
+
+insert into invoice (invoice_id, invoice_date, amount, payment_status, payment_method, patient_id)
+values (402, to_date('2025-09-02','yyyy-mm-dd'), 1500, 'paid', 'card', 12);
+
+--tests
+insert into tests (test_id, patient_id, doctor_id, blood_test, x_ray, mri, ct_scan)
+values (501, 11, 21, 'Y','N','N','N');
+
+insert into tests (test_id, patient_id, doctor_id, blood_test, x_ray, mri, ct_scan)
+values (502, 13, 21, 'Y','Y','N','N');
+
+--3)dml queries (a - h)
+--a)update phone & email of a patient
+update patient
+set phone = '03019990100', email = 'hamza.new@gmail.com'
+where patient_id = 11;
+
+--b)update invoice payment status from "unpaid" to "paid"
+update invoice
+set payment_status = 'paid'
+where invoice_id = 401
+  and lower(payment_status) = 'unpaid';
+
+--c) delete all cancelled appointments
+delete from appointment where lower(status) = 'cancelled';
+
+--d) delete an invoice for a refunded patient
+delete from invoice where patient_id = 12 and payment_status = 'paid';  --assuming refunded after paid
+
+--e) select all appointments that are still "booked"
+select * from appointment where lower(status) = 'booked';
+
+--f) select all invoices that are "unpaid"
+select * from invoice where lower(payment_status) = 'unpaid';
+
+--g) select all lab tests of type "blood test" (yes)
+select * from tests where blood_test = 'Y';
+
+--h) select all prescriptions issued on '2025-09-02'
+select * from prescription where prescription_date = to_date('2025-09-02','yyyy-mm-dd');
+
+--4)advanced sql
+--a) show all patients with their doctors booked (only booked)
+select p.patient_id, p.name as patient_name,
+       d.doctor_id, d.doctor_name, a.appointment_date, a.appointment_time
+from appointment a
+join patient p on a.patient_id = p.patient_id
+join doctor d on a.doctor_id = d.doctor_id
+where lower(a.status) = 'booked'
+order by p.patient_id;
+
+--b)show all lab tests of patients and the doctor who requested them
+select t.test_id, p.patient_id, p.name as patient_name,
+       d.doctor_id, d.doctor_name,
+       t.blood_test, t.x_ray, t.mri, t.ct_scan
+from tests t
+join patient p on t.patient_id = p.patient_id
+join doctor d on t.doctor_id = d.doctor_id
+order by t.test_id;
+
+--c) show prescriptions with medicines only for patients named "ali khan"
+--assuming doctor_advice contains medicine text
+select pr.prescription_id, pr.prescription_date, pr.doctor_advice,
+       p.patient_id, p.name as patient_name
+from prescription pr
+join patient p on pr.patient_id = p.patient_id
+where lower(p.name) = 'ali khan';
+
+--d) show prescriptions with doctors where follow-up is required
+select pr.prescription_id, pr.prescription_date, pr.doctor_advice,
+       p.patient_id, p.name as patient_name,
+       d.doctor_id, d.doctor_name
+from prescription pr
+join patient p on pr.patient_id = p.patient_id
+join doctor d on pr.doctor_id = d.doctor_id
+where pr.followup_required = 'Y';
+
+
+--output checks
+select * from patient order by patient_id;
+select * from doctor order by doctor_id;
+select * from appointment order by appointment_id;
+select * from prescription order by prescription_id;
+select * from invoice order by invoice_id;
+select * from tests order by test_id;
