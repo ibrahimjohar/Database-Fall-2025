@@ -126,7 +126,7 @@ insert into Members (MemberID, Name, Email) values (1, 'Imran Khan', 'imran.khan
 --negative copies
 update Books set CopiesAvailable = -7 where BookID = 3;
 --non existing member
-insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate) values (105, 999, 1, sysdate);
+insert into IssuedBooks (IssuedID, MemberID, BookID, IssueDate) values (105, 999, 12001, sysdate);
 
 --5)suggested improvements
 ---1) count how many times a book was issued by adding in a new timesissued column
