@@ -241,3 +241,78 @@ where (star, director) in (
             where rownum <= 5
         )
 );
+
+--correlated subquery
+--1. find all the movies that have a rating higher than the avg rating of movies 
+----in the same genre
+select * from movies
+where score > avg(genre)
+
+select avg(score) from movies where genre = ?;
+
+select * from movies m1
+where score > (select avg(score) from movies m2 where m2.genre = m1.genre);
+
+-- 2. find the fav food of each customer
+select name, f_name, count(*) from users_res t1
+join orders_res t2 on t1.user_id = t2.user_id
+join order_details_res t3 on t2.order_id = t3.order_id
+join food t4 on t3.f_id = t4.f_id
+group by t2.user_id, t3.f_id;
+
+with fav_food as (
+    select t2.user_id, name, f_name, count(*) as freq
+    from users_res t1
+    join orders_res t2 on t1.user_id = t2.user_id
+    join order_details_res t3 on t2.order_id = t3.order_id
+    join food t4 on t3.f_id = t4.f_id
+    group by t2.user_id, t3.f_id
+)
+select * from fav_food
+where freq = (select max(freq)
+                from fav_food f1
+                where f1.user_id = f1.user_id);
+
+--usage with SELECT
+-- 1. get percentage of votes for each movie compared to the
+-----total num of votes
+
+select name, ((votes/(select sum(votes) from movies))*100) from movies;
+
+--2. display all movie names, genre, score and avg(score) of genre
+
+select name, genre, score, (select avg(score) from movies m2 where m2.genre = m1.genre) from movies m1;
+
+--usage with FROM
+--display avg rating of all restaurants
+select r_id, avg(restaurant_rating) as avg_rating
+from orders_res
+group by r_id;
+
+select r_name, avg_rating
+from (select r_id, avg(restaurant_rating) as avg_rating
+        from orders_res
+        group by r_id) t1 join restaurants t2
+        on t1.r_id = t2.r_id;
+
+--usage with HAVING
+--find genres having avg score > avg score of all movies
+select genre, avg(score)
+from movies
+group by genre
+having avg(score) > (select avg(score) from movies);
+
+
+
+--subquery in INSERT
+-- populate an already created loyal_customers table w/ records
+-- of only those customers who have ordered food more than 3 times
+
+
+insert into loyal_users
+(user_id, name)
+select t1.user_id, name, count(*)
+from orders_res t1
+join users_res t2 on t1.user_id = t2.user_id
+group by user_id
+having count(*) > 3;
