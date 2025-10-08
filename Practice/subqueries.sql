@@ -168,3 +168,76 @@ where star in (select star from movies
                 group by star
                 having avg(score) > 8.5
 );
+
+--independent subquery - table subquery (multi col multi row)
+--1. find the most profitable movie of each year
+select year, max(gross - budget)
+from movies
+group by year;
+
+select * from movies
+where (year, gross - budget) in (select year, max(gross - budget)
+                                    from movies
+                                    group by year);
+
+-- 2.find the highest rated movie of each genre, votes cutoff of 25000
+
+select genre, max(score)
+from movies
+where votes > 25000
+group by genre;
+
+select * from movies
+where (genre, score) in (select genre, max(score)
+                            from movies
+                            where votes > 25000
+                            group by genre)
+and votes > 25000;
+
+
+-- 3. find the highest grossing movies of top 5 actor/director combo in terms of
+-----total gross income
+
+select star, director, sum(gross), max(gross)
+from movies
+group by star, director
+order by sum(gross) desc;
+
+select star, director, total_gross, max_gross
+from (
+    select star, director, sum(gross) as total_gross, max(gross) as max_gross
+    from movies
+    group by star, director
+    order by sum(gross) desc
+
+)where rownum <= 5;
+--logic correct but doesnt work in oracle 11g
+with top_duos as (
+        select star, director, total_gross, max_gross
+        from (
+            select star, director, sum(gross) as total_gross, max(gross) as max_gross
+            from movies
+            group by star, director
+            order by sum(gross) desc
+        )where rownum <= 5
+)
+select * from movies
+where (star, director, gross) in (select * from top_duos);
+
+--syntax correct
+with top_duos as (
+    select star, director, sum(gross) as total_gross, max(gross) as max_gross
+    from movies
+    group by star, director
+    order by sum(gross) desc
+)
+select *
+from movies
+where (star, director) in (
+        select star, director
+        from (
+            select star, director
+            from top_duos
+            where rownum <= 5
+        )
+);
