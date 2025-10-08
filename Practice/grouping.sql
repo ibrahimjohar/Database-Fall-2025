@@ -38,6 +38,9 @@ from smartphones
 group by has_nfc;
 --True	55262.22	82.73
 --False	17294.79	75.5
+
+
+-- 7.avg price of 5g phones vs avg price of non 5g phones
 select has_5g, round(avg(price),2) as avg_price, round(avg(rating),2) as avg_rating
 from smartphones
 group by has_5g;
@@ -90,3 +93,45 @@ from (
 )
 where rn = 1;
 --duoqin	3.54
+
+-- 8.  Group smartphones by the brand, and find the brand with the highest number of models that have both NFC and an IR blaster
+select brand_name, count(*) as cnt
+from smartphones
+where has_nfc = 'True' and has_ir_blaster = 'True'
+group by brand_name
+order by cnt desc;
+
+select brand_name, cnt
+from (
+    select brand_name, cnt, rownum as rn
+    from (
+        select brand_name, count(*) as cnt
+        from smartphones
+        where has_nfc = 'True' and has_ir_blaster = 'True'
+        group by brand_name
+        order by cnt desc
+    )
+)
+where rn = 1;
+-- xiaomi	34
+
+-- 9. find all samsung 5g enabled smartphones and find out the avg price for NFC and Non-NFC phones
+select has_nfc, round(avg(price),2) as avg_price
+from smartphones
+where brand_name = 'samsung' and has_5g = 'True'
+group by has_nfc;
+--True	60458.83
+--False	28820.88
+
+-- 10.find the phone name, price of the costliest phone
+select model, price
+from (
+    select model, price, rownum as rn
+    from (
+        select model, price
+        from smartphones
+        order by price desc
+    )
+)
+where rn = 1;
+-- Vertu Signature Touch	650000
