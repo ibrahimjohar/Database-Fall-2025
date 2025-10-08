@@ -109,3 +109,62 @@ select * from movies
 where score = (select max(score) from movies
                 where votes > (select avg(votes)
                                 from movies));
+
+--independent subquery --> row subquery (one column multiple rows)
+
+-- 1. find all the users who never placed an order
+
+select distinct(user_id) from orders_res;
+
+select * from users_res
+where user_id NOT IN (select distinct(user_id) 
+                        from orders_res);
+
+
+-- 2. find all movies made by top 3 directors (in terms of total gross income)
+
+select director, sum(gross)
+from movies
+group by director
+order by sum(gross) desc limit 3;
+
+select director, total_gross
+from (
+    select director, sum(gross) as total_gross
+    from movies
+    group by director
+    order by sum(gross) desc
+)
+where rownum <=3; --88
+
+select director
+from movies
+group by director 
+order by sum(gross) desc;
+
+select * from movies
+where director 
+in (select director, total_gross
+    from (
+        select director, sum(gross) as total_gross
+        from movies
+        group by director
+        order by sum(gross) desc
+    )
+    where rownum <=3
+);
+
+-- 3. find all movies of all those actors whose filmography's avg
+---->8.5 (take 25000 votes as cut off)
+
+select star, avg(score) from movies
+where votes > 25000
+group by star
+having avg(score) > 8.5;
+
+select * from movies
+where star in (select star from movies
+                where votes > 25000
+                group by star
+                having avg(score) > 8.5
+);
