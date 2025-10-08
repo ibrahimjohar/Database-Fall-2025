@@ -42,3 +42,36 @@ from (
     )
 )
 where rn between 13 and 20;
+
+--5. find the name and rating of the worst rated apple phone
+
+--first observe
+select * from smartphones;
+
+--check what should be the obv result
+select brand_name, model, rating from smartphones
+where brand_name = 'apple'
+order by rating asc;
+
+--final nested-query
+select brand_name, model, rating
+from (
+    select brand_name, model, rating, rownum as rn
+    from (
+        select brand_name, model, rating
+        from smartphones
+        where brand_name = 'apple'
+        order by rating asc
+    )
+)
+where rn = 1;
+--output: apple	Apple iPhone SE 4	60
+
+
+-- 6. sort phones alphabetically and then on the basis of rating in desc order
+select * from smartphones
+order by brand_name asc, rating desc;
+
+-- 7. sort phones alphabetically and then on the basis of rating in asc order
+select * from smartphones
+order by brand_name asc, rating asc;
