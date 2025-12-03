@@ -251,3 +251,33 @@ select * from rebllionRider;
 truncate table rebllionRider;
 
 drop table rebllionRider;
+
+--database event LOG ON trigger
+create table hr_event_audit
+(
+    event_type varchar2(20),
+    logon_date date,
+    logon_time varchar2(15),
+    logof_date date,
+    logof_time varchar2(15)
+);
+
+--trigger
+create or replace trigger hr_lgon_audit
+after logon on schema
+begin
+    insert into hr_event_audit values(
+        ora_sysevent,
+        sysdate,
+        to_char(sysdate, 'hh24:mi:ss'),
+        null,
+        null
+    );
+    commit;
+end;
+
+select * from hr_event_audit;
+
+DISC;
+
+CONN hr/hr;
