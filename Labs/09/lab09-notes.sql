@@ -205,3 +205,49 @@ begin
     delete from superheroes
     where sh_name = 'superman2';
 end;
+
+
+--DDL triggers
+--using ddl triggers, we can track changes to the DB
+create table schema_audit
+(
+    ddl_date        date,
+    ddl_user        varchar2(15),
+    object_created  varchar2(15),
+    object_name     varchar2(15),
+    ddl_operation   varchar2(15)
+);
+
+--trigger for schema_audit
+create or replace trigger hr_audit_tr
+--ddl below can be replaced by 'truncate' or 'create' or 'alter'
+after ddl on schema
+begin
+    insert into schema_audit (
+        ddl_date,
+        ddl_user,
+        object_created,
+        object_name,
+        ddl_operation
+    )
+    values(
+        sysdate,
+        sys_context('USERENV', 'CURRENT_USER'),
+        ora_dict_obj_type,
+        ora_dict_obj_name,
+        ora_sysevent
+    );
+end;
+
+
+select * from schema_audit;
+
+create table rebllionRider(r_num NUMBER);
+
+insert into rebllionRider values(8);
+
+select * from rebllionRider;
+
+truncate table rebllionRider;
+
+drop table rebllionRider;
