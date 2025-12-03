@@ -146,3 +146,62 @@ begin
     delete from superheroes
     where sh_name = 'ironman';
 end;
+
+--creating synchronized backup copy of table using dml trigger
+desc superheroes;
+create table superheroes_backup as 
+select * from superheroes where 1=2;
+
+create or replace trigger sh_backup
+before insert or delete or update on superheroes
+for each row
+enable
+begin
+    if inserting then
+        insert into superheroes_backup(sh_name) values(:NEW.sh_name);
+    elsif deleting then
+        delete from superheroes_backup where sh_name = :OLD.sh_name;
+    elsif updating then
+        update superheroes_backup set sh_name = :NEW.sh_name
+        where sh_name = :OLD.sh_name;
+    end if;
+end;
+
+select * from superheroes;
+select * from superheroes_backup;
+
+set serveroutput on;
+begin
+    insert into superheroes values ('batman-new');
+    insert into superheroes values ('superman-new');
+end;
+
+set serveroutput on;
+begin
+    update superheroes set sh_name='ironman-new'
+    where sh_name='batman-new';
+end;
+
+set serveroutput on;
+begin
+    delete from superheroes
+    where sh_name = 'superman-new';
+end;
+
+set serveroutput on;
+begin
+    delete from superheroes
+    where sh_name = 'ironman-new';
+end;
+
+set serveroutput on;
+begin
+    delete from superheroes
+    where sh_name = 'flash';
+end;
+
+set serveroutput on;
+begin
+    delete from superheroes
+    where sh_name = 'superman2';
+end;
