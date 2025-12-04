@@ -313,3 +313,65 @@ commit;
 end;
 
 
+--INSTEAD OF trigger
+--we can control the default behavior of Insert, Update
+--Delete and Merge operations on VIEWS but not on TABLES
+
+--table 1
+create table trainer
+(
+    full_name varchar2(20)
+);
+--table 2
+create table subject
+(
+    subject_name varchar2(20)
+);
+
+insert into trainer values ('ibrahim johar');
+insert into subject values ('oracle');
+
+create view custom_view as
+select full_name, subject_name from trainer, subject;
+
+--not changable right now -> will give error
+insert into custom_view values ('ibrahim', 'java');
+
+--instead of trigger
+create or replace trigger tr_io_insert
+instead of insert on custom_view
+for each row
+begin
+    insert into trainer (full_name) values (:new.full_name);
+    insert into subject (subject_name) values(:new.subject_name);
+end;
+
+--Trigger TR_IO_INSERT compiled
+
+--lets try inserting again
+insert into custom_view values ('ibrahim', 'java');
+
+--output: 1 row inserted.
+
+select * from trainer;
+
+--instead of UPDATE trigger
+create or replace trigger io_update
+instead of update on custom_view
+for each row
+begin
+    update trainer set full_name = :new.full_name
+    where full_name = :old.full_name;
+    
+    update subject set subject_name = :new.subject_name
+    where subject_name = :old.subject_name;
+end;
+
+--instead of DELETE trigger
+create or replace trigger io_delete
+instead of delete on custom_view
+for each row
+begin
+    delete from trainer where full_name = :old.full_name;
+    delete from subject where subject_name = :old.subject_name;
+end;
