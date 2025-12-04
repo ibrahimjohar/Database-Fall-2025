@@ -281,3 +281,35 @@ select * from hr_event_audit;
 DISC;
 
 CONN hr/hr;
+
+--log off trigger
+create or replace trigger log_off_audit
+before logoff on schema
+begin
+    insert into hr_event_audit values(
+        ora_sysevent,
+        null,
+        null,
+        sysdate,
+        to_char(sysdate, 'hh24:mi:ss')
+    );
+commit;
+end;
+
+select * from hr_event_audit;
+
+create or replace trigger db_logof_audit
+before logoff on database
+begin
+    insert into db_event_audit values(
+        user,
+        ora_sysevent,
+        null,
+        null,
+        sysdate,
+        to_char(sysdate, 'hh24:mi:ss')
+    );
+commit;
+end;
+
+
