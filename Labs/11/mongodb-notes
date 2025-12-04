@@ -1,0 +1,405 @@
+-- ============================================================
+-- 0. DATABASE & COLLECTION COMMANDS
+-- ============================================================
+
+use dbName                           -- switch/create database
+show dbs                             -- list all databases
+show collections                     -- list collections in DB
+db.dropDatabase()                    -- delete current database
+
+db.createCollection("MyCollection")  -- create collection
+db.MyCollection.drop()               -- drop collection
+
+
+
+-- ============================================================
+-- 1. INSERT OPERATIONS
+-- ============================================================
+
+db.users.insertOne({ name:"Ali" })   -- insert single document
+
+db.users.insertMany([                -- insert multiple docs
+  { name:"Sara" },
+  { name:"Hamza" }
+])
+
+
+
+-- ============================================================
+-- 2. BASIC QUERIES
+-- ============================================================
+
+db.users.find()                      -- return all documents
+db.users.findOne({ age:22 })         -- return first match
+db.users.find({ age:{ $gt:20 } })    -- filter using query
+
+
+
+-- ============================================================
+-- 3. PROJECTION (SELECT fields)
+-- ============================================================
+
+db.users.find({}, { name:1, _id:0 }) -- include specific fields
+db.users.find({}, { password:0 })    -- exclude a field
+
+
+
+-- ============================================================
+-- 4. COMPARISON OPERATORS
+-- ============================================================
+
+db.col.find({ age:{ $eq:22 } })      -- equal
+db.col.find({ age:{ $ne:30 } })      -- not equal
+db.col.find({ age:{ $gt:18 } })      -- greater than
+db.col.find({ age:{ $gte:18 } })     -- greater or equal
+db.col.find({ age:{ $lt:40 } })      -- less than
+db.col.find({ age:{ $lte:40 } })     -- less or equal
+db.col.find({ age:{ $in:[20,25] } }) -- value in array
+db.col.find({ age:{ $nin:[18] } })   -- value not in array
+
+
+
+-- ============================================================
+-- 5. LOGICAL OPERATORS
+-- ============================================================
+
+db.col.find({                        -- AND operator
+  $and:[ { age:{ $gt:20 } }, { city:"Karachi" } ]
+})
+
+db.col.find({                        -- OR operator
+  $or:[ { age:{ $lt:20 } }, { age:{ $gt:60 } } ]
+})
+
+db.col.find({ age:{ $not:{ $gt:50 } } })    -- negate condition
+db.col.find({ $nor:[ { age:20 }, { city:"Lahore" } ] }) -- neither
+
+
+
+-- ============================================================
+-- 6. UPDATE OPERATIONS
+-- ============================================================
+
+db.col.updateOne(                    -- update first match
+  { name:"Ali" },
+  { $set:{ age:23 } }
+)
+
+db.col.updateMany(                   -- update all matches
+  { minor:true },
+  { $set:{ verified:true } }
+)
+
+db.col.updateOne(                    -- increase numeric field
+  { name:"Ali" },
+  { $inc:{ score:5 } }
+)
+
+db.col.updateMany(                   -- rename a field
+  {},
+  { $rename:{ "old":"new" } }
+)
+
+db.col.updateMany(                   -- set value only if new doc
+  {},
+  { $setOnInsert:{ createdAt:new Date() } }
+)
+
+-- ARRAY update operators
+db.col.updateOne(
+  { _id:1 },
+  { $push:{ hobbies:"Sports" } }     -- push element to array
+)
+
+db.col.updateOne(
+  { _id:1 },
+  { $addToSet:{ hobbies:"Reading" } } -- avoid duplicates
+)
+
+db.col.updateOne(
+  { _id:1 },
+  { $pop:{ hobbies:1 } }             -- remove last element
+)
+
+
+
+-- ============================================================
+-- 7. DELETE OPERATIONS
+-- ============================================================
+
+db.col.deleteOne({ name:"Ali" })          -- delete single doc
+db.col.deleteMany({ age:{ $lt:18 } })     -- delete multiple docs
+
+
+
+-- ============================================================
+-- 8. SORT, LIMIT, SKIP (PAGINATION)
+-- ============================================================
+
+db.col.find().sort({ age:1 })             -- ascending sort
+db.col.find().sort({ age:-1 })            -- descending sort
+
+db.col.find().limit(5)                    -- return 5 documents
+db.col.find().skip(10)                    -- skip first 10 docs
+db.col.find().skip(20).limit(10)          -- pagination
+
+
+
+-- ============================================================
+-- 9. ARRAY QUERIES
+-- ============================================================
+
+db.col.find({ skills:"Java" })            -- array contains value
+db.col.find({ skills:["Java","Python"] }) -- exact array match
+
+db.col.find({                             -- match array item condition
+  scores:{ $elemMatch:{ $gte:80, $lte:90 } }
+})
+
+db.col.find({ tags:{ $size:3 } })         -- array length = 3
+db.col.find({ "scores.0": { $gt:90 } })   -- first element > 90
+
+
+
+-- ============================================================
+-- 10. REGEX SEARCHES
+-- ============================================================
+
+db.col.find({ name:{ $regex:"^A", $options:"i" } })  -- starts with A
+db.col.find({ email:{ $regex:"@gmail\\.com$" } })     -- ends with gmail
+
+
+
+-- ============================================================
+-- 11. TEXT SEARCH (requires index)
+-- ============================================================
+
+db.col.createIndex({ title:"text", description:"text" }) -- create text index
+
+db.col.find({ $text:{ $search:"mongodb database" } })    -- text search
+
+db.col.find({                                           -- text + filter
+  $text:{ $search:"mobile" },
+  price:{ $lt:500 }
+})
+
+
+
+-- ============================================================
+-- 12. INDEXES
+-- ============================================================
+
+db.col.createIndex({ age:1 })                      -- simple index
+db.col.createIndex({ name:1, age:-1 })             -- compound index
+db.col.createIndex({ email:1 }, { unique:true })   -- unique index
+
+db.col.dropIndex("email_1")                        -- remove index
+db.col.getIndexes()                                -- show indexes
+
+
+
+-- ============================================================
+-- 13. COUNTING
+-- ============================================================
+
+db.col.countDocuments()                            -- total docs
+db.col.countDocuments({ age:{ $gt:30 } })          -- count with filter
+
+db.col.estimatedDocumentCount()                    -- fast approx count
+
+
+
+-- ============================================================
+-- 14. DISTINCT
+-- ============================================================
+
+db.col.distinct("city")                            -- unique cities
+db.col.distinct("skills")                          -- unique array values
+
+
+
+-- ============================================================
+-- 15. AGGREGATION PIPELINE (ALL MAJOR STAGES)
+-- ============================================================
+
+db.col.aggregate([                                 -- pipeline structure
+  { $match:{ age:{ $gt:20 } } },                   -- filter
+  { $group:{ _id:"$city", avgAge:{ $avg:"$age" } } }, -- group & aggregate
+  { $sort:{ avgAge:-1 } }                          -- sort output
+])
+
+-- Match: filter stage
+{ $match:{ status:"active" } }
+
+-- Project: reshape fields
+{ $project:{ name:1, upper:{ $toUpper:"$name" } } }
+
+-- Group: aggregation calculations
+{ $group:{ _id:"$city", total:{ $sum:1 } } }
+
+-- Sort: ascending/descending
+{ $sort:{ age:-1 } }
+
+-- Limit: limit results
+{ $limit:5 }
+
+-- Skip: skip results
+{ $skip:10 }
+
+-- Lookup: JOIN collections
+{
+  $lookup:{
+    from:"Orders",
+    localField:"_id",
+    foreignField:"userId",
+    as:"orders"
+  }
+}
+
+-- Unwind: explode array into multiple rows
+{ $unwind:"$tags" }
+
+-- AddFields: add new computed fields
+{ $addFields:{ percent:{ $multiply:["$score",10] } } }
+
+-- ReplaceRoot: replace entire document with a subdocument
+{ $replaceRoot:{ newRoot:"$details" } }
+
+-- Count: count docs in pipeline
+{ $count:"totalCount" }
+
+-- sortByCount: group + count + sort
+{ $sortByCount:"$category" }
+
+-- Facet: multiple sub-pipelines parallel
+{
+  $facet:{
+    "highScores":[ { $match:{ score:{ $gt:80 } } } ],
+    "lowScores":[ { $match:{ score:{ $lt:50 } } } ]
+  }
+}
+
+
+
+-- ============================================================
+-- 16. GEOSPATIAL QUERIES
+-- ============================================================
+
+db.places.createIndex({ location:"2dsphere" })     -- enable geo queries
+
+db.places.find({                                  -- find near location
+  location:{
+    $near:{
+      $geometry:{ type:"Point", coordinates:[67.0011,24.8607] },
+      $maxDistance:5000
+    }
+  }
+})
+
+
+
+-- ============================================================
+-- 17. DATE OPERATORS
+-- ============================================================
+
+db.col.find({ createdAt:{ $gte:ISODate("2023-01-01") } }) -- filter by date
+
+db.col.aggregate([                                   -- extract date parts
+  { $project:{ year:{ $year:"$createdAt" }, month:{ $month:"$createdAt" } } }
+])
+
+
+
+-- ============================================================
+-- 18. BULK OPERATIONS
+-- ============================================================
+
+db.col.bulkWrite([                                   -- multiple ops at once
+  { insertOne:{ document:{ name:"Ali", age:20 } } },
+  { updateOne:{ filter:{ name:"Ali" }, update:{ $set:{ age:21 } } } },
+  { deleteOne:{ filter:{ name:"Sara" } } }
+])
+
+
+
+-- ============================================================
+-- 19. ADMIN COMMANDS
+-- ============================================================
+
+db.stats()                                           -- statistics for DB
+db.serverStatus()                                    -- server-level info
+db.repairDatabase()                                  -- repair database files
+
+
+
+-- ============================================================
+-- 20. FULL LAB TASK SOLUTIONS (WITH COMMENTS)
+-- ============================================================
+
+use SchoolDB                                         -- start DB
+
+db.createCollection("Students")                      -- create students
+db.createCollection("Courses")                       -- create courses
+
+db.Students.insertMany([                             -- insert lab students
+  { name:"Alice", age:20, math:88, science:92 },
+  { name:"Bob", age:22, math:76, science:81 },
+  { name:"Charlie", age:23, math:90, science:78 },
+  { name:"Daisy", age:21, math:82, science:75 }
+])
+
+db.Courses.insertMany([                              -- insert lab courses
+  { courseName:"Math 101", instructor:"Dr. Smith", studentsEnrolled:[1,2] },
+  { courseName:"Physics 201", instructor:"Dr. Adams", studentsEnrolled:[2,3] },
+  { courseName:"Chemistry 301", instructor:"Dr. Brown", studentsEnrolled:[3,4] }
+])
+
+-- findOne: math >= 85 AND age < 22
+db.Students.findOne({
+  $and:[ { math:{ $gte:85 } }, { age:{ $lt:22 } } ]
+})
+
+-- findOne: array contains 3 AND instructor matches
+db.Courses.findOne({
+  studentsEnrolled:3,
+  instructor:"Dr. Adams"
+})
+
+-- find: math >= 80 AND science < 90
+db.Students.find({ math:{ $gte:80 }, science:{ $lt:90 } })
+
+-- find: age < 23 OR math >= 85
+db.Students.find({ $or:[ { age:{ $lt:23 } }, { math:{ $gte:85 } } ] })
+
+-- find: science >= 80 AND (math < 75 OR age > 22)
+db.Students.find({
+  science:{ $gte:80 },
+  $or:[ { math:{ $lt:75 } }, { age:{ $gt:22 } } ]
+})
+
+-- update Bob's science score
+db.Students.updateOne(
+  { name:"Bob", math:{ $gte:75 } },
+  { $inc:{ science:1 } }
+)
+
+-- increment math by 5 for selected students
+db.Students.updateMany(
+  { science:{ $lt:80 }, age:{ $gt:22 } },
+  { $inc:{ math:5 } }
+)
+
+-- delete Daisy
+db.Students.deleteOne({ name:"Daisy", science:{ $lt:80 } })
+
+-- delete courses containing student 2 OR instructor Dr Smith
+db.Courses.deleteMany({
+  $or:[ { studentsEnrolled:2 }, { instructor:"Dr. Smith" } ]
+})
+
+-- drop collections
+db.Students.drop()
+db.Courses.drop()
+
+-- drop entire DB
+db.dropDatabase()
